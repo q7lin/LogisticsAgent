@@ -8,7 +8,7 @@ def root():
     return {"Hello": "World"}
 
 @app.post("/chat")
-def chat(query:str):
+def chat(query:str, user_id:str):
     return query
 
 @app.post("/add_urls")
