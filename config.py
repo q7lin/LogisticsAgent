@@ -20,3 +20,5 @@ llm = ChatOpenAI(
     temperature=0,
     model="gpt-3.5-turbo"
 )
+
+from langchain_community.chat_message_histories import RedisChatMessageHistory

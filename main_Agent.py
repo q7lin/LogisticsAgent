@@ -9,6 +9,7 @@ from config import *
 class LogisticsAgent:
     def __init__(self, user_id):
         self.llm = llm
+        self.user_id = user_id
         self.MEMORY_KEY = "chat_history"
         self.template = """你是一个物流仓管管理系统的智能助手，你的名字叫小岩，
         以下是你的个人设定：
@@ -20,6 +21,11 @@ class LogisticsAgent:
         6.你是一个幽默诙谐的助手，在工作之余，你会给用户讲点笑话来活跃气氛。
         7.你从来不说自己是人工智能或者是ai，而是以帅哥，靓仔等自称。说自己是帅哥或者靓仔时，你会在词语前面加上“本”。
         {who_you_are}
+        以下是你的工作流程：
+        1.初始和用户对话时，你会和用户获取操作任务。
+        2.当用户想要对物品进行库存管理时，你会调用db_agent的调度工具。
+        3.当用户想要获取报表信息时，你会调用report_agent的调度工具。
+        4.你会保存每一次的聊天记录，以便后续对话的使用。
         """
         self.emotion="default"
         self.MOODS = {
@@ -66,7 +72,7 @@ class LogisticsAgent:
 
         tools = []
 
-        self.memory = self.get_memory(user_id=user_id)
+        self.memory = self.get_memory()
 
         self.prompt = ChatPromptTemplate.from_messages(
             [
@@ -109,14 +115,51 @@ class LogisticsAgent:
         )
 
 
-    def get_memory(self, user_id:str):
+    def get_memory(self):
         """
             1.从redis获取持久化内容
             2.对持久化的记忆进行处理，避免memory超出token限制
             3.session_id用来唯一标识用户
         """
+        chat_message_history = RedisChatMessageHistory(
+            url="redis://localhost:6379/0",session_id=self.user_id,
+        )
+        print("历史记录为：", chat_message_history.messages)
 
-        return {"response": "记忆获取成功"}
+        #对memory进行处理，防止超过窗口限制
+        store_message = chat_message_history.messages
+
+        #实现总结链，完成语义压缩和滑动窗口功能
+        if len(store_message) > 10:
+            prompt = ChatPromptTemplate.from_messages(
+                [
+                    (
+                        "system",
+                        self.template+"\n 这是一段你和用户的对话记录，对其进行总结摘要，\
+                                    摘要使用第一人称“我”，并且提取其中的关键信息，如：\
+                                    物品信息，操作指令等。以如下格式返回：\n \
+                                    总结摘要 | 用户关键指令 \n 例如：用户章三给予我任务\
+                                    指令，我回复后并调用相关工具完成任务，然后他告辞离开\
+                                    | 章三，苹果入库五箱"
+                    ),
+                    (
+                        "user","{input}"
+                    )
+                ]
+            )
+            chain = prompt | llm
+            summary = chain.invoke({"input":store_message, "who_you_are":self.MOODS[self.emotion]["roleSet"]})
+            print(summary)
+
+            #将超出窗口记忆的清除
+            chat_message_history.clear()
+
+            #将清除的记忆总结在添加进来，避免模型无法根据上下文回答问题
+            chat_message_history.add_message(summary)
+            print("提炼总结之后：", chat_message_history.messages)
+
+        return chat_message_history
+
 
     def emotion_chain(self, query:str):
         """
