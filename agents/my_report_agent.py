@@ -1,33 +1,28 @@
-from langchain.agents import create_openai_tools_agent, AgentExecutor
-from langchain.memory import ConversationTokenBufferMemory
-from langchain_core.prompts import ChatPromptTemplate
-
 from config import *
+from langchain_core.prompts import ChatPromptTemplate
+from langchain.agents import AgentExecutor, create_openai_tools_agent
+from langchain.memory import ConversationTokenBufferMemory
 
-
-class db_agent:
+class report_agent:
     def __init__(self, user_id):
-        self.llm=llm
+        self.llm = llm
         self.user_id = user_id
-        self.MEMORY_KEY="chat_history",
-        self.template= """你是仓库入库出库管理助手，你主要负责数据库的相关操作，你的名字叫小七
+        self.MEMORY_KEY = "chat_history",
+        self.template = """你是报表信息助手，你主要负责所有数据的总结和可视化，你的名字叫小星
         以下是你的个人设定：
         1.你比较严格，你会对用户发出的指令进行严格判断，指令不清晰、模糊时，你都会让用户重新下指令。
-        2.你对待工作比较认真，会极大程度的避免增删改查操作出现错误。
-        3.当用户给你指令进行操作时，你在完成操作的过程中，有时会加上你之前处理过的任务的案例。
-        4.你从不说自己是人工智能或者ai，而是称呼自己为小七。
+        2.你对待工作比较认真，一点数据处理上的错误都不会犯，你做出来的报表质量都很高。
+        3.当用户给你指令进行操作时，你在完成操作的过程中，有时会加上你之前处理数据的案例。
+        4.你从不说自己是人工智能或者ai，而是称呼自己为小星。
         以下是你的口头禅：
-        1.开始工作咯，美好的一天开始了。
-        2.这么复杂的操作啊，让我仔细看一看。
-        3.太厉害了，这么完美的工作也只有我能完成了。
+        1.开始工作咯，美好的一天开始啦。
+        2.好多数据信息要处理啊，看本天才怎么又快又好的完成。
+        3.太厉害了，这么完美的数据处理工作也只有我能完成了。
         以下是你的工作流程：
         1.当初始和用户对话时，你会先询问用户的工作任务。
-        2.当用户想要对物品进行入库时，你会调用入库工具。
-        3.当用户想要查询物品信息时，你会调用查询工具。
-        4.当用户想要出库物品时，你会调用出库工具。
-        5.当用户想要对物品信息进行修改时，你会调用修改工具。
-        6.当用户想要查询物品的介绍时，你会调用本地知识库。
-        7.你会保存每一次的聊天记录，以便后续对话使用。
+        2.当用户想要图形数据总结时，你会调用绘图数据总结工具。
+        3.当用户想要表格数据总结时，你会调用制表数据总结工具。
+        4.你会保存每一次的聊天记录，以便后续对话使用。
         用户输入为：
         {input}
         """
@@ -49,14 +44,14 @@ class db_agent:
             chat_memory=self.memory,
         )
 
-        db_agent = create_openai_tools_agent(
+        my_report_agent = create_openai_tools_agent(
             llm=self.llm,
             prompt=self.prompt,
             tools=tools,
         )
 
-        self.db_agent_executor = AgentExecutor(
-            agent=db_agent,
+        self.report_agent_executor = AgentExecutor(
+            agent=my_report_agent,
             memory=memory,
             tools=tools,
             max_iteration=3,
@@ -65,15 +60,13 @@ class db_agent:
 
     def get_memory(self):
         """
-            1.出入库管理的副agent记忆模块
-            2.为了防止共享记忆而导致记忆混乱，从而造成无法准确理解上下文，对不同的agent进行处理
-            3.id唯一标识一个用户，则对唯一的一个id后面添加独有的字符串，可以实现一个用户三个不同记忆池的功能
+            1.报表处理的记忆模块，可以查询对哪些数据进行了总结
+            2.现在有一个问题，报表的数据来源从哪里获得？是也弄一个查询工具，还是从db_agent的查询返回信息来获得数据，这样要怎么获取，不会耦合程度太高了吗
         """
 
         chat_message_history = RedisChatMessageHistory(
-            url="redis://localhost:6379/0", session_id=self.user_id + "_agent_a",
+            url="redis://localhost:6379/0", session_id=self.user_id + "_agent_b",
         )
-        print("历史记录为：", chat_message_history.messages)
 
         #对memory进行处理，防止超出窗口限制
         store_message = chat_message_history.messages
@@ -99,18 +92,18 @@ class db_agent:
 
             chain = prompt | llm
             summary = chain.invoke({"input":store_message})
+            print(summary)
 
-            #将超出限制的记忆清除
+            #将超出窗口的记忆
             chat_message_history.clear()
 
-            #将清除的记忆总结之后再添加进来，避免模型无法根据上下文回答问题
+            #将清除的记忆总结精炼后添加进来
             chat_message_history.add_message(summary)
-            print("总结精炼后的记忆：", chat_message_history.messages)
 
         return chat_message_history
 
-    def run(self, query:str):
+    def run(self, query: str):
 
-        result = self.db_agent_executor.invoke({"input":query})
+        result = self.report_agent_executor.invoke({"input": query})
 
         return result

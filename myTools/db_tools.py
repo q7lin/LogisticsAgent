@@ -1,24 +1,80 @@
-from langchain.agents import tool
+from langchain.agents import tool, AgentType
+from langchain_community.agent_toolkits import SQLDatabaseToolkit, create_sql_agent
+from langchain_community.utilities.sql_database import SQLDatabase
+from langchain_core.prompts import PromptTemplate
 
 from config import *
 
-#增
-@tool
-def create(name:str, quantity:int):
-    return None
+"""
+    1.除过查询语句，其他的语句都只需要返回布尔值，以此来判断操作是否成功。
+    2.还需要给这些布尔返回值添加判断机制，并且给四个工具都添加try语句
+"""
 
-#删
-@tool
-def delete(name:str, quantity:int):
-    return None
+db = SQLDatabase.from_uri("")
+tookit = SQLDatabaseToolkit(db=db, llm=llm)
 
-#改
-@tool
-def update(name:str, quantity:int):
-    return None
+agent = create_sql_agent(
+    llm=llm,
+    tookit=tookit,
+    agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION
+)
 
-#查
+#增加操作
 @tool
-def read(name:str):
-    #返回字典，如果字典为空，则说明是新增的；否则就是添加。根据字典的空来判断，不然后续需要单独查询某一个物品信息返回来的是布尔值不好
-    return None
+def insert(query:str):
+    """只有在新增物品活物品信息时，才会使用这个工具"""
+
+    template = """你是一个数据库专家，请按照以下需求**只生成INSERT增加语句**，
+    禁止生成INSERT，SELECT，UPDATE语句，否则你将受到惩罚。
+    需求：{query}
+    """
+
+    prompt = PromptTemplate.from_template(template)
+    agent.run(prompt)
+
+    return True
+
+#删除操作
+@tool
+def delete(query:str):
+    """只有在删除物品信息或者删除物品时才会用到这个工具"""
+
+    template = """你是一个数据库专家，请按照以下需求**只生成DELETE删除语句**，
+    禁止生成INSERT，SELECT，UPDATE语句，否则你将受到惩罚。
+    需求：{query}
+    """
+
+    prompt = PromptTemplate.from_template(template)
+    agent.run(prompt)
+
+    return True
+
+#修改操作，修改操作是在数据库上直接进行修改，因此不需要返回值，只需要知道是否修改成功
+@tool
+def update(query:str):
+    """只有在修改物品信息时才会用到这个工具"""
+
+    template = """你是一个数据库专家，请按照以下需求**只生成UPDATE修改语句**，
+    禁止生成DELETE，INSERT，SELECT语句，否则你将受到惩罚。
+    需求：{query}
+    """
+
+    prompt = PromptTemplate.from_template(template)
+    agent.run(prompt)
+
+    return True
+
+#查询操作
+@tool
+def read(query:str):
+    """只有在查询物品信息时才会用到这个工具"""
+
+    template = """你是一个数据库专家，请按照以下需求**只生成SELECT查询语句**，
+        禁止生成DELETE，INSERT，UPDATE语句，否则你将受到惩罚。
+        需求：{query}
+        """
+
+    prompt = PromptTemplate.from_template(template)
+    data_info = agent.run(prompt)
+
+    return data_info
