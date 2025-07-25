@@ -10,12 +10,12 @@ from config import *
     2.还需要给这些布尔返回值添加判断机制，并且给四个工具都添加try语句
 """
 
-db = SQLDatabase.from_uri("")
-tookit = SQLDatabaseToolkit(db=db, llm=llm)
+db = SQLDatabase.from_uri("sqlite:///F:/History.db")
+toolkit = SQLDatabaseToolkit(db=db, llm=llm)
 
 agent = create_sql_agent(
     llm=llm,
-    tookit=tookit,
+    toolkit=toolkit,
     agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION
 )
 
@@ -30,7 +30,10 @@ def insert(query:str):
     """
 
     prompt = PromptTemplate.from_template(template)
-    agent.run(prompt)
+    prompt_value = prompt.format(query=query)
+    result = agent.invoke(prompt_value)
+
+    print(result)
 
     return True
 
@@ -45,7 +48,10 @@ def delete(query:str):
     """
 
     prompt = PromptTemplate.from_template(template)
-    agent.run(prompt)
+    prompt_value = prompt.format(query=query)
+    result = agent.invoke(prompt_value)
+
+    print(result)
 
     return True
 
@@ -60,21 +66,27 @@ def update(query:str):
     """
 
     prompt = PromptTemplate.from_template(template)
-    agent.run(prompt)
+    prompt_value = prompt.format(query=query)
+    result = agent.invoke(prompt_value)
+
+    print(result)
 
     return True
 
 #查询操作
 @tool
-def read(query:str):
+def select(query:str):
     """只有在查询物品信息时才会用到这个工具"""
 
     template = """你是一个数据库专家，请按照以下需求**只生成SELECT查询语句**，
-        禁止生成DELETE，INSERT，UPDATE语句，否则你将受到惩罚。
-        需求：{query}
-        """
+    禁止生成DELETE，INSERT，UPDATE语句，否则你将受到惩罚。
+    需求：{query}
+    """
 
     prompt = PromptTemplate.from_template(template)
-    data_info = agent.run(prompt)
+    prompt_value = prompt.format(query=query)
+    data_info = agent.invoke(prompt_value)
+
+    print(data_info)
 
     return data_info

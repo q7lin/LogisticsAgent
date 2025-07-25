@@ -7,7 +7,7 @@ class report_agent:
     def __init__(self, user_id):
         self.llm = llm
         self.user_id = user_id
-        self.MEMORY_KEY = "chat_history",
+        self.MEMORY_KEY = "chat_history"
         self.template = """你是报表信息助手，你主要负责所有数据的总结和可视化，你的名字叫小星
         以下是你的个人设定：
         1.你比较严格，你会对用户发出的指令进行严格判断，指令不清晰、模糊时，你都会让用户重新下指令。
@@ -25,6 +25,8 @@ class report_agent:
         4.你会保存每一次的聊天记录，以便后续对话使用。
         用户输入为：
         {input}
+        
+        {agent_scratchpad}
         """
 
         tools = []

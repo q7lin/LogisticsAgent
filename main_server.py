@@ -1,5 +1,6 @@
 import uvicorn
 from fastapi import FastAPI
+from agents.my_db_agent import *
 
 app = FastAPI(redirect_slashes=False)
 
@@ -9,7 +10,13 @@ def root():
 
 @app.post("/chat")
 def chat(query:str, user_id:str):
-    return query
+    uid = user_id
+
+    mydb = db_agent(uid)
+
+    result = mydb.run(query)
+
+    return result
 
 @app.post("/add_urls")
 def add_urls(url:str):
