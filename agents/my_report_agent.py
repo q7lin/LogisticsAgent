@@ -1,7 +1,7 @@
-from config import *
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.agents import AgentExecutor, create_openai_tools_agent
 from langchain.memory import ConversationTokenBufferMemory
+from myTools.report_tools import *
 
 class report_agent:
     def __init__(self, user_id):
@@ -30,7 +30,7 @@ class report_agent:
         {data}
         """
 
-        tools = []
+        tools = [generate_chart, generate_table]
 
         self.prompt = ChatPromptTemplate.from_template(self.template)
 
