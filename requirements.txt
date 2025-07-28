@@ -7,3 +7,6 @@ redis
 qdrant_client==1.7.1
 uvicorn==0.23.2
 elevenlabs==1.1.0
+pandas==2.3.1
+matplotlib==3.10.3
+IPython==8.37.0

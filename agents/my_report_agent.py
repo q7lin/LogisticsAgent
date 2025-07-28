@@ -26,7 +26,8 @@ class report_agent:
         用户输入为：
         {input}
         
-        {agent_scratchpad}
+        需要用到的数据为：#这个数据到时候看看应该放在哪个位置，这个位置肯定是不合适的
+        {data}
         """
 
         tools = []

@@ -10,6 +10,7 @@ from config import *
     2.还需要给这些布尔返回值添加判断机制，并且给四个工具都添加try语句
 """
 
+"""
 db = SQLDatabase.from_uri("sqlite:///F:/History.db")
 toolkit = SQLDatabaseToolkit(db=db, llm=llm)
 
@@ -18,6 +19,38 @@ agent = create_sql_agent(
     toolkit=toolkit,
     agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION
 )
+"""
+
+def get_db_urls(query: str):
+
+    if "日志" in query or "logs" in query:
+        return "sqlite:///F:/logs.db"
+
+    elif "药品" in query or "medicines" in query:
+        return "sqlite:///F:/medicines.db"
+
+    elif "设备" in query or "equipments" in query:
+        return "sqlite:///F:/equipments.db"
+
+    else:
+        return "sqlite:///F:/equipments.db"
+
+
+def get_sql_agents(query:str):
+
+    url = get_db_urls(query)
+    db = SQLDatabase.from_uri(url)
+    toolkit = SQLDatabaseToolkit(db=db, llm=llm)
+
+    agent = create_sql_agent(
+        llm=llm,
+        toolkit=toolkit,
+        agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION
+    )
+
+    result = agent.invoke({"input":query})
+
+    return result
 
 #增加操作
 @tool
@@ -31,7 +64,7 @@ def insert(query:str):
 
     prompt = PromptTemplate.from_template(template)
     prompt_value = prompt.format(query=query)
-    result = agent.invoke(prompt_value)
+    result = get_sql_agents(prompt_value)
 
     print(result)
 
@@ -49,7 +82,7 @@ def delete(query:str):
 
     prompt = PromptTemplate.from_template(template)
     prompt_value = prompt.format(query=query)
-    result = agent.invoke(prompt_value)
+    result = get_sql_agents(prompt_value)
 
     print(result)
 
@@ -67,7 +100,7 @@ def update(query:str):
 
     prompt = PromptTemplate.from_template(template)
     prompt_value = prompt.format(query=query)
-    result = agent.invoke(prompt_value)
+    result = get_sql_agents(prompt_value)
 
     print(result)
 
@@ -85,8 +118,8 @@ def select(query:str):
 
     prompt = PromptTemplate.from_template(template)
     prompt_value = prompt.format(query=query)
-    data_info = agent.invoke(prompt_value)
+    data_info = get_sql_agents(prompt_value)
 
-    print(data_info)
+    print("查询到的数据信息为：", data_info)
 
     return data_info
