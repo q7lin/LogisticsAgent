@@ -2,7 +2,6 @@ from langchain.agents import create_openai_tools_agent, AgentExecutor
 from langchain.memory import ConversationTokenBufferMemory
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-from config import *
 from myTools.db_tools import *
 
 

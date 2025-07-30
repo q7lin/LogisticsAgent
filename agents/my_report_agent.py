@@ -105,8 +105,11 @@ class report_agent:
 
         return chat_message_history
 
-    def run(self, query: str):
+    def data_chain(self):
+        pass
 
-        result = self.report_agent_executor.invoke({"input": query})
+    def run(self, query: str, data: dict):
+
+        result = self.report_agent_executor.invoke({"input": query, "data":data})
 
         return result
