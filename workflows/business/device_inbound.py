@@ -3,9 +3,10 @@ from agents.my_report_agent import report_agent
 
 def register_device_inbound(query:str, user_id:str):
     """
-    设备入库登记:插入设备数据->查询校验->写入入库日志->表格导出
+    设备入库登记:查询设备库存状态->插入设备数据->查询校验->写入入库日志->表格导出
+    如果没有该设备则需要创建
     """
-
+    """业务需要改写"""
     #根据用户输入完成第一步操作
     my_db = db_agent(user_id)
     my_report = report_agent(user_id)
@@ -29,6 +30,6 @@ def register_device_inbound(query:str, user_id:str):
     if result_flag:
         data = my_db.run("查询入库前的该物品信息和入库物品信息并进行对比然后将整条数据返回")
 
-        result_report = my_report.run({"input": "将此数据进行分析并生成图示", "data": data})
+        result_report = my_report.run("将此数据进行分析并生成图示", data)
 
     return {msg, result_report}

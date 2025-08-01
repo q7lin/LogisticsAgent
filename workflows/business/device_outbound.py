@@ -1,6 +1,6 @@
 from agents.my_db_agent import db_agent
 
-def process_device_outbound(query:str, user_id:str, name:str, num:str):
+def process_device_outbound(query:str, user_id:str, name:str):
     """
     设备出库操作:查询设备状态->修改库存数量->插入出库记录
     """

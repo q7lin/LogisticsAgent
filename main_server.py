@@ -1,6 +1,9 @@
+import ast
+import re
+
 import uvicorn
 from fastapi import FastAPI
-from agents.my_db_agent import *
+from main_Agent import LogisticsAgent
 
 app = FastAPI(redirect_slashes=False)
 
@@ -12,9 +15,41 @@ def root():
 def chat(query:str, user_id:str):
     uid = user_id
 
-    mydb = db_agent(uid)
+    my_agent = LogisticsAgent(uid)
 
-    result = mydb.run(query)
+    result = my_agent.run(query)
+
+    text = result["output"]
+
+    """
+    text = result["output"]
+
+    # 用正则匹配花括号包围的json部分
+    pattern = r"(\[.*\])"  # 贪婪匹配，匹配第一个和最后一个花括号之间所有内容
+    match = re.search(pattern, text, re.S)  # re.S 让.匹配换行符
+    data = None
+
+    if match:
+        json_str = match.group(1)
+        try:
+            data = json.loads(json_str)
+        except json.JSONDecodeError as e:
+            print("JSON解析失败:", e)
+    else:
+        print("没有找到有效的JSON数据")
+        """
+
+    pattern = r"(\[.*?\])"  # 非贪婪匹配，防止跨多段匹配错误
+    match = re.search(pattern, text, re.S)
+    list_str = None
+
+    if match:
+        list_str = match.group(1)
+
+
+    lst = ast.literal_eval(list_str)
+    print("提取并转换后的数据：", lst)
+    print("转换后的数据类型为：", type(lst))
 
     return result
 

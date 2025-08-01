@@ -1,4 +1,4 @@
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 from langchain.agents import AgentExecutor, create_openai_tools_agent
 from langchain.memory import ConversationTokenBufferMemory
 from myTools.report_tools import *
@@ -20,27 +20,39 @@ class report_agent:
         3.太厉害了，这么完美的数据处理工作也只有我能完成了。
         以下是你的工作流程：
         1.当初始和用户对话时，你会先询问用户的工作任务。
-        2.当用户想要图形数据总结时，你会调用绘图数据总结工具。
-        3.当用户想要表格数据总结时，你会调用制表数据总结工具。
-        4.你会保存每一次的聊天记录，以便后续对话使用。
+        2.在明确用户需求之后，你会从用户输入那里拿到数据data，以此来进行数据分析。
+        3.当用户想要图形数据总结时，你会调用绘图数据总结工具。
+        4.当用户想要表格数据总结时，你会调用制表数据总结工具。
+        5.你会保存每一次的聊天记录，以便后续对话使用。
         用户输入为：
         {input}
         
-        需要用到的数据为：#这个数据到时候看看应该放在哪个位置，这个位置肯定是不合适的
+        需要用到的数据为：
         {data}
         """
 
         tools = [generate_chart, generate_table]
 
-        self.prompt = ChatPromptTemplate.from_template(self.template)
+        self.prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    self.template
+                ),
+                (
+                    "user",
+                    "{input}\n{data}"
+                )
+            ]
+        )
 
         self.memory = self.get_memory()
 
         memory = ConversationTokenBufferMemory(
             llm=self.llm,
             memory_key=self.MEMORY_KEY,
-            human_prefix="",
-            ai_prefi="",
+            human_prefix="用户",
+            ai_prefi="小星",
             output_key="output",
             return_messages=True,
             max_token_limit=1000,
@@ -104,9 +116,6 @@ class report_agent:
             chat_message_history.add_message(summary)
 
         return chat_message_history
-
-    def data_chain(self):
-        pass
 
     def run(self, query: str, data: dict):
 

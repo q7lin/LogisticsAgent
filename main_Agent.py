@@ -26,18 +26,23 @@ class LogisticsAgent:
         2.获取用户输入之后，你会说类似“稍等，马上完成”这样的话。
         3.你会保存每一次的聊天记录，以便后续对话的使用。
         当用户输入一个需求后：
-        1.你需要分析这个需求有多少个业务流程（如入库，库存查询，报表生成等）。
-        2.每一个独立的业务流程都算一个流程。
-        3.在回复完用户的自然语言内容之后，返回相应的流程数目。
-        4.如果只是单纯的聊天，则不返回数字。
+        1.在回复完用户的自然语言内容之后，返回第一个操作和需要操作的对象。
+        2.返回dict类型的数据，需要严格遵守，否则会受到惩罚。
+        3.第一个业务的第一个操作都有这些内容：查询设备库存状态、查询设备状态、查询设备库存、查询操作日志、
+        查询失败操作、查询药品库存状态、查询药品库存、查询药品状态，你需要严格分析用户输入，按照要求得到用户输入的
+        第一个业务然后返回。
+        4.用户需求和操作之间的关系如下：设备入库为查询设备库存状态、设备出库为查询设备状态、查询设备库存为查询设备库存、
+        药品入库为查询药品库存状态、药品出库为查询药品状态、查询药品库存为查询药品库存
+        5.有具体操作时不需要回复用户，没有具体操作时才需要回复用户。
         -示例1：
         --用户输入：“我想看看库存里的打印机还有多少个并且生成图表”
-        --你识别出两个流程：库存查询，生成图示，生成图表。
-        --回复示例：“本靓仔先给你查一下库存，再给你图表信息，安排的明明白白的~”
-        --返回数字2
+        --你识别出第一个个流程为：查询当前库存
+        --返回str类型的数据，格式如下：['查询设备库存状态', '打印机']
         -示例2：
         --用户输入：“你好呀”
         --回复示例：“哈喽哈喽，你好呀，有什么需要交给本帅哥代劳的吗？”
+        保持上述的格式进行返回，否则你会受到惩罚。
+        上述的返回结果不是情绪，不许将上述的返回示例当作情绪。
         """
         self.emotion="default"
         self.MOODS = {
@@ -95,7 +100,7 @@ class LogisticsAgent:
                 MessagesPlaceholder(variable_name=self.MEMORY_KEY),
                 (
                     "user",
-                    "input",
+                    "{input}",
                 ),
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
             ]
@@ -185,6 +190,9 @@ class LogisticsAgent:
         5.如果用户回复的内容比较兴奋，只返回"upbeat"，不要有其他内容，否则会受到惩罚。
         6.如果用户回复的内容比较悲伤，只返回"depressed"，不要有其他内容，否则会受到惩罚。
         7.如果用户回复的内容比较开心，只返回"cheerful"，不要有其他内容，否则会受到惩罚。
+        8.如果用户回复的内容你判断不出情绪，只返回"default"，不要有其他内容，否则会受到惩罚。
+        示例：阿莫西林入库100件。
+        返回：default。
         用户输入为：{input}
         """
         prompt = ChatPromptTemplate.from_template(template)
@@ -195,14 +203,14 @@ class LogisticsAgent:
             output_parser=StrOutputParser(),
         )
 
-        result = chain.invoke({"query": query})
+        result = chain.invoke({"input": query})
 
         return result
 
     def run(self, query:str):
 
-        emotion = self.emotion_chain(query=query)
+        emotion = self.emotion_chain(query)
         self.emotion = emotion["text"]
-        result = self.agent_executor.invoke({"query": query})
+        result = self.agent_executor.invoke({"input": query, "chat_history":self.memory.messages})
 
         return result
