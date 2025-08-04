@@ -23,7 +23,7 @@ agent = create_sql_agent(
 
 def get_db_urls(query: str):
 
-    if "日志" in query or "logs" in query:
+    if "操作日志" in query or "logs" in query:
         return "sqlite:///F:/logs.db"
 
     elif "药品" in query or "medicines" in query:
