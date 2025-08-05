@@ -2,6 +2,7 @@ from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 from langchain.agents import AgentExecutor, create_openai_tools_agent
 from langchain.memory import ConversationTokenBufferMemory
 from myTools.report_tools import *
+from utils.config import *
 
 class report_agent:
     def __init__(self, user_id):
@@ -105,7 +106,7 @@ class report_agent:
                 ]
             )
 
-            chain = prompt | llm
+            chain = prompt | self.llm
             summary = chain.invoke({"input":store_message})
             print(summary)
 

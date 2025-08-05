@@ -3,42 +3,65 @@ from langchain_community.agent_toolkits import SQLDatabaseToolkit, create_sql_ag
 from langchain_community.utilities.sql_database import SQLDatabase
 from langchain_core.prompts import PromptTemplate
 
-from config import *
+from utils.config import *
 
-"""
-1.除过查询语句，其他的语句都只需要返回布尔值，以此来判断操作是否成功。
-2.还需要给这些布尔返回值添加判断机制，并且给四个工具都添加try语句
-"""
 
-"""
-db = SQLDatabase.from_uri("sqlite:///F:/History.db")
-toolkit = SQLDatabaseToolkit(db=db, llm=llm)
+def extract_dosage(query, dosage_mapping=None):
+    """
+    从药品名称字符串中提取剂型关键词（如"胶囊"、"片剂"等）
+    参数:
+        query (str): 输入的药品名称字符串（如"阿莫西林胶囊"）
+        dosage_mapping (list, optional): 剂型关键词映射表，默认包含常见剂型
 
-agent = create_sql_agent(
-    llm=llm,
-    toolkit=toolkit,
-    agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION
-)
-"""
+    返回:
+        str: 提取到的剂型关键词，若未匹配到则返回None
+    """
+    # 默认剂型关键词映射表（按长度从长到短排序，避免短词优先匹配）
+    default_mapping = [
+        "注射液", "混悬剂", "口服液", "气雾剂", "灌肠剂", "口崩片",
+        "胶囊", "片剂", "颗粒", "散剂", "丸剂", "糖浆", "软膏",
+        "乳膏", "贴剂", "滴剂", "膏剂", "丹剂", "酒剂", "露剂",
+    ]
+
+    # 预处理：去除字符串中的空格和特殊符号
+    processed_query = query.replace(" ", "").strip()
+
+    # 按关键词长度从长到短排序，确保长关键词优先匹配
+    sorted_mapping = sorted(default_mapping, key=lambda x: len(x), reverse=True)
+
+    # 优先匹配结尾（符合"药品名+剂型"的常规命名）
+    for dosage in sorted_mapping:
+        if processed_query.endswith(dosage):
+            return dosage
+
+    # 若结尾未匹配，再检查是否包含该关键词（应对特殊命名）
+    for dosage in sorted_mapping:
+        if dosage in processed_query:
+            return dosage
+
+    # 未匹配到任何剂型
+    return None
 
 def get_db_urls(query: str):
 
-    if "操作日志" in query or "logs" in query:
+    result = extract_dosage(query)
+
+    if "日志" in query or "logs" in query:
         return "sqlite:///F:/logs.db"
 
-    elif "药品" in query or "medicines" in query:
+    elif result is not None:
         return "sqlite:///F:/medicines.db"
 
-    elif "设备" in query or "equipments" in query:
+    elif "设备" in query or "装备" in query or "仪器" in query or "仪" in query:
         return "sqlite:///F:/equipments.db"
 
     else:
-        return "sqlite:///F:/equipments.db"
+        return "sqlite:///F:/logs.db"
 
 
 def get_sql_agents(query:str):
-
     url = get_db_urls(query)
+    print("使用的数据库为:", url)
     db = SQLDatabase.from_uri(url)
     toolkit = SQLDatabaseToolkit(db=db, llm=llm)
 
@@ -121,5 +144,6 @@ def select(query:str):
     data_info = get_sql_agents(prompt_value)
 
     print("查询到的数据信息为：", data_info)
+    print("查询到的数据类型为：", type(data_info))
 
     return data_info

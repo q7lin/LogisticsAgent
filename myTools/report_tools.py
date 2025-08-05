@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 from IPython.core.pylabtools import figsize
 from langchain.agents import tool
 
-from config import *
 
 @tool
 def generate_chart(data:List[Dict]):

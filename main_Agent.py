@@ -4,7 +4,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.memory import ConversationTokenBufferMemory
 
-from config import *
+from utils.config import *
 
 class LogisticsAgent:
     def __init__(self, user_id):
