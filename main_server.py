@@ -28,7 +28,7 @@ def chat(query:str, user_id:str):
     lst = transfer(text)
 
     #调用业务层完成实际业务
-    control = control_flow(lst[-1], lst[0], user_id, query)
+    control = control_flow(lst[1], lst[0], user_id, query, lst[-1])
     final_result = control.logic_judgement()
     print("操作结果为：", final_result)
     

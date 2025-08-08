@@ -1,4 +1,6 @@
-from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
+from typing import Any
+
+from langchain_core.prompts import ChatPromptTemplate, PromptTemplate, MessagesPlaceholder
 from langchain.agents import AgentExecutor, create_openai_tools_agent
 from langchain.memory import ConversationTokenBufferMemory
 from myTools.report_tools import *
@@ -27,9 +29,6 @@ class report_agent:
         5.你会保存每一次的聊天记录，以便后续对话使用。
         用户输入为：
         {input}
-        
-        需要用到的数据为：
-        {data}
         """
 
         tools = [generate_chart, generate_table]
@@ -40,10 +39,12 @@ class report_agent:
                     "system",
                     self.template
                 ),
+                MessagesPlaceholder(variable_name=self.MEMORY_KEY),
                 (
                     "user",
-                    "{input}\n{data}"
-                )
+                    "{input}"
+                ),
+                MessagesPlaceholder(variable_name="agent_scratchpad"),
             ]
         )
 
@@ -54,6 +55,7 @@ class report_agent:
             memory_key=self.MEMORY_KEY,
             human_prefix="用户",
             ai_prefi="小星",
+            input_key="input",
             output_key="output",
             return_messages=True,
             max_token_limit=1000,
@@ -118,7 +120,7 @@ class report_agent:
 
         return chat_message_history
 
-    def run(self, query: str, data: dict):
+    def run(self, query: str, data: Any):
 
         result = self.report_agent_executor.invoke({"input": query, "data":data})
 

@@ -1,3 +1,5 @@
+from distutils.util import execute
+
 from langchain.agents import tool, AgentType
 from langchain_community.agent_toolkits import SQLDatabaseToolkit, create_sql_agent
 from langchain_community.utilities.sql_database import SQLDatabase
@@ -47,16 +49,16 @@ def get_db_urls(query: str):
     result = extract_dosage(query)
 
     if "日志" in query or "logs" in query:
-        return "sqlite:///F:/logs.db"
+        return "mysql+pymysql://root:123456@localhost:3306/logs"
 
     elif result is not None:
-        return "sqlite:///F:/medicines.db"
+        return "mysql+pymysql://root:123456@localhost:3306/medicines"
 
     elif "设备" in query or "装备" in query or "仪器" in query or "仪" in query:
-        return "sqlite:///F:/equipments.db"
+        return "mysql+pymysql://root:123456@localhost:3306/equipments"
 
     else:
-        return "sqlite:///F:/logs.db"
+        return "mysql+pymysql://root:123456@localhost:3306/logs"
 
 
 def get_sql_agents(query:str):
@@ -68,7 +70,8 @@ def get_sql_agents(query:str):
     agent = create_sql_agent(
         llm=llm,
         toolkit=toolkit,
-        agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION
+        agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        handle_parsing_errors=True
     )
 
     result = agent.invoke({"input":query})
@@ -80,8 +83,8 @@ def get_sql_agents(query:str):
 def insert(query:str):
     """只有在新增物品活物品信息时，才会使用这个工具"""
 
-    template = """你是一个数据库专家，请按照以下需求**只生成INSERT增加语句**，
-    禁止生成INSERT，SELECT，UPDATE语句，否则你将受到惩罚。
+    template = """你是一个数据库专家，请按照以下需求**只生成INSERT增加语句并执行**，
+    禁止生成和执行DELETE，SELECT，UPDATE语句，否则你将受到惩罚。
     需求：{query}
     """
 
@@ -98,8 +101,8 @@ def insert(query:str):
 def delete(query:str):
     """只有在删除物品信息或者删除物品时才会用到这个工具"""
 
-    template = """你是一个数据库专家，请按照以下需求**只生成DELETE删除语句**，
-    禁止生成INSERT，SELECT，UPDATE语句，否则你将受到惩罚。
+    template = """你是一个数据库专家，请按照以下需求**只生成DELETE删除语句并执行**，
+    禁止生成和执行INSERT，SELECT，UPDATE语句，否则你将受到惩罚。
     需求：{query}
     """
 
@@ -116,8 +119,8 @@ def delete(query:str):
 def update(query:str):
     """只有在修改物品信息时才会用到这个工具"""
 
-    template = """你是一个数据库专家，请按照以下需求**只生成UPDATE修改语句**，
-    禁止生成DELETE，INSERT，SELECT语句，否则你将受到惩罚。
+    template = """你是一个数据库专家，请按照以下需求**只生成UPDATE修改语句并执行**，
+    禁止生成和执行DELETE，INSERT，SELECT语句，否则你将受到惩罚。
     需求：{query}
     """
 
@@ -134,8 +137,8 @@ def update(query:str):
 def select(query:str):
     """只有在查询物品信息时才会用到这个工具"""
 
-    template = """你是一个数据库专家，请按照以下需求**只生成SELECT查询语句**，
-    禁止生成DELETE，INSERT，UPDATE语句，否则你将受到惩罚。
+    template = """你是一个数据库专家，请按照以下需求**只生成SELECT查询语句并执行**，
+    禁止生成和执行DELETE，INSERT，UPDATE语句，否则你将受到惩罚。
     需求：{query}
     """
 

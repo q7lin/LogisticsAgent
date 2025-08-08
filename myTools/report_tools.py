@@ -10,7 +10,7 @@ def generate_chart(data:List[Dict]):
     """当用户想要分析数据并且得到图示时调用这个工具"""
     df = pd.DataFrame(data)
 
-    result = df.groupby("物品")["入库数量"].sum().reset_index()
+    result = df.groupby("name")["count"].sum().reset_index()
     save_path = "static/物品入库统计.xlsx"
 
     result.to_excel(save_path, index=False)
@@ -22,8 +22,8 @@ def generate_table(data:List[Dict]):
     """当用户想要分析数据并且得到表格时调用这个工具"""
     df = pd.DataFrame(data)
 
-    df["日期"] = pd.to_datetime(df["日期"])
-    df = df.groupby("日期")["入库数量"].sum()
+    df["date"] = pd.to_datetime(df["date"])
+    df = df.groupby("date")["count"].sum()
 
     plt.figure(figsize(8, 4))
     df.plot(kind='line', marker='o')
