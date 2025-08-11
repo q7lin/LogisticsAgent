@@ -23,6 +23,7 @@ def extract_dosage(query, dosage_mapping=None):
         "注射液", "混悬剂", "口服液", "气雾剂", "灌肠剂", "口崩片",
         "胶囊", "片剂", "颗粒", "散剂", "丸剂", "糖浆", "软膏",
         "乳膏", "贴剂", "滴剂", "膏剂", "丹剂", "酒剂", "露剂",
+        "设备", "装备", "仪器", "仪", "日志",
     ]
 
     # 预处理：去除字符串中的空格和特殊符号
@@ -31,34 +32,26 @@ def extract_dosage(query, dosage_mapping=None):
     # 按关键词长度从长到短排序，确保长关键词优先匹配
     sorted_mapping = sorted(default_mapping, key=lambda x: len(x), reverse=True)
 
-    # 优先匹配结尾（符合"药品名+剂型"的常规命名）
+    matches = []
     for dosage in sorted_mapping:
-        if processed_query.endswith(dosage):
-            return dosage
-
-    # 若结尾未匹配，再检查是否包含该关键词（应对特殊命名）
-    for dosage in sorted_mapping:
-        if dosage in processed_query:
-            return dosage
-
-    # 未匹配到任何剂型
-    return None
+        if processed_query.endswith(dosage) or dosage in processed_query:
+            matches.append(dosage)
+    return matches if matches else None
 
 def get_db_urls(query: str):
 
     result = extract_dosage(query)
+    print("从用户输入获取到的关键词为：", result)
 
-    if "日志" in query or "logs" in query:
+    if result == "日志" or (isinstance(result, list) and "日志" in result):
         return "mysql+pymysql://root:123456@localhost:3306/logs"
 
-    elif result is not None:
-        return "mysql+pymysql://root:123456@localhost:3306/medicines"
-
-    elif "设备" in query or "装备" in query or "仪器" in query or "仪" in query:
+    elif result in ["设备", "装备", "仪器", "仪"] or (
+    isinstance(result, list) and any(x in ["设备", "装备", "仪器", "仪"] for x in result)):
         return "mysql+pymysql://root:123456@localhost:3306/equipments"
 
     else:
-        return "mysql+pymysql://root:123456@localhost:3306/logs"
+        return "mysql+pymysql://root:123456@localhost:3306/medicines"
 
 
 def get_sql_agents(query:str):
@@ -81,7 +74,7 @@ def get_sql_agents(query:str):
 #增加操作
 @tool
 def insert(query:str):
-    """只有在新增物品活物品信息时，才会使用这个工具"""
+    """只有在插入物品时，才会使用这个工具"""
 
     template = """你是一个数据库专家，请按照以下需求**只生成INSERT增加语句并执行**，
     禁止生成和执行DELETE，SELECT，UPDATE语句，否则你将受到惩罚。
@@ -117,7 +110,7 @@ def delete(query:str):
 #修改操作，修改操作是在数据库上直接进行修改，因此不需要返回值，只需要知道是否修改成功
 @tool
 def update(query:str):
-    """只有在修改物品信息时才会用到这个工具"""
+    """只有在修改或者更新物品信息时才会用到这个工具"""
 
     template = """你是一个数据库专家，请按照以下需求**只生成UPDATE修改语句并执行**，
     禁止生成和执行DELETE，INSERT，SELECT语句，否则你将受到惩罚。

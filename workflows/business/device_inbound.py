@@ -24,10 +24,12 @@ def register_device_inbound(query:str, user_id:str, name:str, count:str):
     # 查询校验，看设备是否存在，查询返回的结果是数据
     select_result = my_db.run("查询equipments数据库的equips表中" + name + "这个设备的最新一条库存记录")
 
+    text = select_result["output"]
+
     # 查询到的数据不为空，证明设备存在，直接完成插入即可；否则需要创建字段在插入
-    if select_result is not None:
-        my_db.run("将" + name + "这个设备的数量再添加" + count + "个并且不需要再添加一次。")
-        update_result = my_db.run("查询equipments数据库的equips表中" + name + "最小一条库存记录")
+    if "库存数量" in text or "件" in text or "日期" in text:
+        my_db.run("调用update工具，将" + name + "这个设备的数量再添加" + count + "个并且不需要再添加一次。")
+        update_result = my_db.run("查询equipments数据库的equips表中" + name + "最新一条库存记录")
     else:
         my_db.run(query)
         update_result = my_db.run("查询equipments数据库的equips表中" + name + "这个设备的最新一条库存记录")
@@ -48,9 +50,12 @@ def register_device_inbound(query:str, user_id:str, name:str, count:str):
 
     # 完成第四步操作
     if equipments_count > 0:
-        my_db.run("将本次所有sql操作的中文插入logs数据库的log表中")
+        my_db.run("将本次所有sql操作的中文名称插入logs数据库的log表中")
         table_result = my_db.run("查询equipments数据库的equips表中的所有数据")
         data = table_result["output"]
         img_result = my_report.run("将此数据进行分析并生成图示", data)
 
-    return {update_result, img_result}
+    return {
+        "sql_result" : update_result,
+        "report_result" : img_result
+    }

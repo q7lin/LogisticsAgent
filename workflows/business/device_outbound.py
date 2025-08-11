@@ -16,12 +16,12 @@ def process_device_outbound(query:str, user_id:str, name:str, count:str):
 
     # 修改库存数量
     if select_result is not None:
-        update_result = my_db.run("将"+name+"这个设备的数量减少"+count+"个。")
+        my_db.run("将"+name+"这个设备的数量减少"+count+"个。")
         msg = "修改成功"
     else:
         msg = "修改失败"
 
-    if update_result:
-        my_db.run("将刚刚的sql操作记录到logs数据库的log表中")
-
-    return {msg, None}
+    return {
+        "sql_result": msg,
+        "report_result": None
+    }

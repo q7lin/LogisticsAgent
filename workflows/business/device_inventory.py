@@ -29,4 +29,7 @@ def inventory_check_devices(user_id:str, name:str):
         data = select_result["output"]
         table_result = my_report.run("将数据做成表格", data)
 
-    return {msg, table_result}
+    return {
+        "sql_result": msg,
+        "report_result": table_result
+    }

@@ -24,4 +24,7 @@ def trace_abnormal_operations(query:str, user_id:str):
         data = select_result
         table_result = my_report.run("生成一个表格，将数据放在表格中", data)
 
-    return {msg, table_result}
+    return {
+        "sql_result": msg,
+        "report_result": table_result
+    }

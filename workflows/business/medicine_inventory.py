@@ -39,4 +39,7 @@ def monitor_medicine_inventory(user_id:str, name:str):
     data = select_result
     table_result = my_report.run("生成一个表格，并将这些数据放入表格中，表格名字叫：" + name + "药品需要补货", data)
 
-    return {msg, table_result}
+    return {
+        "sql_result" : msg,
+        "report_result" : table_result
+    }

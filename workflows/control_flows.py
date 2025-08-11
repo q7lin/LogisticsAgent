@@ -18,7 +18,7 @@ class control_flow:
         """
 
         if self.business == "查询设备库存状态":
-            messages = register_device_inbound(user_id=self.user_id, query=self.query, name=self.name)
+            messages = register_device_inbound(user_id=self.user_id, query=self.query, name=self.name, count=self.count)
             print("调用的结果为：", messages)
             print("结果的类型为：", type(messages))
             print("调用register_device_inbound函数")
@@ -26,7 +26,7 @@ class control_flow:
 
 
         if self.business == "查询设备状态":
-            messages = process_device_outbound(user_id=self.user_id, query=self.query, name=self.name)
+            messages = process_device_outbound(user_id=self.user_id, query=self.query, name=self.name, count=self.count)
             print("调用的结果为：", messages)
             print("结果的类型为：", type(messages))
             print("调用process_device_outbound函数")
